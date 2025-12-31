@@ -18,4 +18,5 @@ CREATE TABLE logs (
 );
 
 INSERT INTO users (username, password, role)
-VALUES ('fundador', 'fundador123', 'FUNDADOR');
+VALUES ('fundador', '123456', 'FUNDADOR');
+
