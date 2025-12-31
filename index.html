@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Moderna | Painel Staff</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Segoe UI,sans-serif;
+  background:#0b0f14;
+  color:#fff;
+}
+.hidden{display:none}
+.container{max-width:1200px;margin:auto;padding:20px}
+.box{background:#0f172a;padding:20px;border-radius:12px;margin-bottom:20px}
+input,select,button{
+  width:100%;padding:10px;margin:5px 0;
+  border-radius:8px;border:none;
+  background:#020617;color:#fff
+}
+button{background:#38bdf8;font-weight:bold;cursor:pointer}
+button:hover{background:#0ea5e9}
+.danger{background:#ef4444}
+.success{background:#22c55e;color:#000}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #1f2933;text-align:center}
+th{color:#38bdf8}
+a{color:#22c55e}
+header{text-align:center;padding:20px;border-bottom:1px solid #1f2933}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Vision Moderna</h1>
+  <span>Painel de Logs de Punição</span>
+</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="loginBox" class="box">
+  <h2>Login Staff</h2>
+  <input id="loginUser" placeholder="Usuário">
+  <input id="loginPass" type="password" placeholder="Senha">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<!-- PAINEL -->
+<div id="panel" class="hidden">
+
+<div class="box">
+  <h3>Usuário logado: <span id="userInfo"></span></h3>
+  <button class="danger" onclick="logout()">Sair</button>
+</div>
+
+<!-- GERENCIAR USUÁRIOS (FOUNDERS) -->
+<div id="userManager" class="box hidden">
+  <h2>Gerenciar Logins</h2>
+  <input id="newUser" placeholder="Novo usuário">
+  <input id="newPass" placeholder="Senha">
+  <select id="newRole">
+    <option value="user">Usuário</option>
+    <option value="staff">Staff</option>
+    <option value="founder">Founder</option>
+  </select>
+  <button onclick="createUser()">Criar Login</button>
+
+  <h3>Contas criadas</h3>
+  <ul id="userList"></ul>
+</div>
+
+<!-- ADICIONAR PUNIÇÃO -->
+<div class="box">
+  <h2>Adicionar Punição</h2>
+  <input id="player" placeholder="Jogador">
+  <select id="type">
+    <option>Advertência</option>
+    <option>Mute</option>
+    <option>Prisao</option>
+    <option>Ban</option>
+  </select>
+  <input id="reason" placeholder="Motivo">
+  <input id="link" placeholder="Link da prova">
+  <button onclick="addLog()">Salvar</button>
+</div>
+
+<!-- LOGS -->
+<div class="box">
+<table>
+<thead>
+<tr>
+<th>Jogador</th><th>Punição</th><th>Motivo</th>
+<th>Prova</th><th>Staff</th><th>Data</th><th>Ação</th>
+</tr>
+</thead>
+<tbody id="logs"></tbody>
+</table>
+</div>
+
+</div>
+</div>
+
+<script>
+let users = JSON.parse(localStorage.getItem("users")) || [
+  {user:"fundador",pass:"123456",role:"founder"}
+];
+let logs = JSON.parse(localStorage.getItem("logs")) || [];
+let currentUser = null;
+
+function save(){
+  localStorage.setItem("users",JSON.stringify(users));
+  localStorage.setItem("logs",JSON.stringify(logs));
+}
+
+function login(){
+  const u=loginUser.value,p=loginPass.value;
+  const found=users.find(x=>x.user===u && x.pass===p);
+  if(!found) return alert("Login inválido");
+  currentUser=found;
+  loginBox.classList.add("hidden");
+  panel.classList.remove("hidden");
+  userInfo.innerText=`${found.user} (${found.role})`;
+  if(found.role==="founder") userManager.classList.remove("hidden");
+  render();
+}
+
+function logout(){
+  currentUser=null;
+  location.reload();
+}
+
+function createUser(){
+  users.push({
+    user:newUser.value,
+    pass:newPass.value,
+    role:newRole.value
+  });
+  save();
+  renderUsers();
+}
+
+function deleteUser(i){
+  users.splice(i,1);
+  save();
+  renderUsers();
+}
+
+function renderUsers(){
+  userList.innerHTML="";
+  users.forEach((u,i)=>{
+    userList.innerHTML+=`
+      <li>${u.user} (${u.role})
+      <button class="danger" onclick="deleteUser(${i})">Excluir</button></li>`;
+  });
+}
+
+function addLog(){
+  logs.push({
+    player:player.value,
+    type:type.value,
+    reason:reason.value,
+    link:link.value,
+    staff:currentUser.user,
+    date:new Date().toLocaleString()
+  });
+  save();
+  render();
+}
+
+function deleteLog(i){
+  if(currentUser.role==="user") return alert("Sem permissão");
+  logs.splice(i,1);
+  save();
+  render();
+}
+
+function render(){
+  logsEl=document.getElementById("logs");
+  logsEl.innerHTML="";
+  logs.forEach((l,i)=>{
+    logsEl.innerHTML+=`
+      <tr>
+        <td>${l.player}</td>
+        <td>${l.type}</td>
+        <td>${l.reason}</td>
+        <td>${l.link?`<a href="${l.link}" target="_blank">Abrir</a>`:"—"}</td>
+        <td>${l.staff}</td>
+        <td>${l.date}</td>
+        <td>
+          ${currentUser.role!=="user"?
+          `<button class="danger" onclick="deleteLog(${i})">X</button>`:"—"}
+        </td>
+      </tr>`;
+  });
+  renderUsers();
+}
+</script>
+
+</body>
+</html>
